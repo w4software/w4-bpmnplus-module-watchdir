@@ -5,7 +5,7 @@
 
   <groupId>eu.w4.contrib</groupId>
   <artifactId>bpmnplus-module-filewatcher</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <packaging>jar</packaging>
   <name>BPMN+ FileWatcher Module</name>
   <description>A module watching for files in a directory</description>

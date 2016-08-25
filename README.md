@@ -11,7 +11,7 @@ a new item is dropped into a directory.
 Download
 --------
 
-The package should be available soon from the W4 store.
+The package can be downloaded from [release page](https://github.com/w4software/w4-bpmnplus-module-watchdir/releases)
 
 
 Installation
@@ -61,6 +61,14 @@ should have the correct privileges set.
 
     module.filewatcher.login=<login>
     module.filewatcher.password=<password>
+
+
+As this module may be faster to load than the underlying ECI sources, an attempt is made to wait for all sources to be available before actually
+starting. This behavior is customizable through two following optional keys
+
+    module.filewatcher.config.retryCount=<number>             # default to 3
+    module.filewatcher.config.retryInterval=<milliseconds>    # default to 500 (ms)
+    module.filewatcher.config.initialInterval=<milliseconds>  # default to <retryInterval>
 
 
 ### Configure the watched sources

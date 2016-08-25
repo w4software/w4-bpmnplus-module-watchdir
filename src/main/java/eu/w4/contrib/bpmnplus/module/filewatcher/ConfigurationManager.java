@@ -118,6 +118,18 @@ class ConfigurationManager
     return sources.values();
   }
 
+  public boolean isFullyAvailable(final Collection<SourceConfig> sources)
+  {
+    for (final SourceConfig source : sources)
+    {
+       if (!source.isAvailable())
+       {
+         return false;
+       }
+    }
+    return true;
+  }
+
   public List<SourceConfig> validateConfiguration(final Collection<SourceConfig> sources)
   {
     final List<SourceConfig> validSourceConfigs = new ArrayList<SourceConfig>();

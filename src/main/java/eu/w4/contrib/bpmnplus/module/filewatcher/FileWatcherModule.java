@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import eu.w4.common.configuration.ConfigurationKeyNotFoundException;
 import eu.w4.common.exception.CheckedException;
 import eu.w4.common.log.Logger;
 import eu.w4.common.log.LoggerFactory;
@@ -57,6 +58,21 @@ public class FileWatcherModule implements ExternalModule, Runnable
   private String _login;
   private String _password;
 
+  private int _configLoadRetryCount;
+  private int _configLoadRetryInterval;
+  private int _configLoadInitialInterval;
+
+  private static void sleep(int milliseconds)
+  {
+    try
+    {
+      Thread.sleep(milliseconds);
+    }
+    catch (final InterruptedException e)
+    {
+    }
+  }
+
   @Override
   public void startup(ExternalModuleContext context) throws CheckedException, RemoteException
   {
@@ -77,11 +93,51 @@ public class FileWatcherModule implements ExternalModule, Runnable
 
     _login = ConfigurationHelper.getStringValue(_context.getParameters(), "module.filewatcher.login");
     _password = ConfigurationHelper.getStringValue(_context.getParameters(), "module.filewatcher.password");
-    
+    try
+    {
+      _configLoadRetryCount = ConfigurationHelper.getIntValue(_context.getParameters(), "module.filewatcher.config.retryCount");
+    }
+    catch (final ConfigurationKeyNotFoundException e)
+    {
+      _configLoadRetryCount = 3;
+    }
+    try
+    {
+      _configLoadRetryInterval = ConfigurationHelper.getIntValue(_context.getParameters(), "module.filewatcher.config.retryInterval");
+    }
+    catch (final ConfigurationKeyNotFoundException e)
+    {
+      _configLoadRetryInterval = 500;
+    }
+    try
+    {
+      _configLoadInitialInterval = ConfigurationHelper.getIntValue(_context.getParameters(), "module.filewatcher.config.initialInterval");
+    }
+    catch (final ConfigurationKeyNotFoundException e)
+    {
+      _configLoadInitialInterval = _configLoadRetryInterval;
+    }
+
     final ConfigurationManager configurationManager = new ConfigurationManager(context);
+
+    Collection<SourceConfig> allSources = null;
+    sleep(_configLoadInitialInterval);
     final Principal principal = getPrincipal();
-    final Collection<SourceConfig> allSources = configurationManager.getConfiguration(principal);
+    for (int retry = 0 ; retry <= _configLoadRetryCount ; retry++)
+    {
+      allSources = configurationManager.getConfiguration(principal);
+      if (configurationManager.isFullyAvailable(allSources))
+      {
+        break;
+      }
+      sleep(_configLoadRetryInterval);
+      if (_logger.isDebugEnabled())
+      {
+        _logger.debug("Retrying to load configuration as all sources are not available");
+      }
+    }
     _context.getEngineService().getAuthenticationService().logout(principal);
+
     if (_logger.isDebugEnabled())
     {
       _logger.debug("Found [" + allSources.size() + "] sources: " + allSources);
